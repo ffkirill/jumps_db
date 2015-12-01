@@ -3,6 +3,8 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QDateTime>
+#include <QCoreApplication>
+#include <QDir>
 
 JumpsSqlModel::JumpsSqlModel(QObject *parent) :
     QSqlQueryModel(parent)
@@ -10,10 +12,12 @@ JumpsSqlModel::JumpsSqlModel(QObject *parent) :
     int idx = 0;
     while(COLUMN_NAMES[idx]) {
         m_roleNames[Qt::UserRole + idx + 1] = COLUMN_NAMES[idx];
-        idx++;
+        ++idx;
     }
     m_db = QSqlDatabase::addDatabase("QSQLITE");
-    m_db.setDatabaseName("jumps.db");
+
+    m_db.setDatabaseName(QDir(QCoreApplication::applicationDirPath())
+                         .filePath("jumps.db"));
     bool is_open = m_db.open();
     if (is_open == true){
         qDebug() << "Connection to database established." << endl;
@@ -22,8 +26,8 @@ JumpsSqlModel::JumpsSqlModel(QObject *parent) :
                  << " :" << (m_db.lastError().text()) << endl;
         return;
     }
-    refresh();
     m_db.exec(SQL_INIT);
+    refresh();
 }
 
 QVariant JumpsSqlModel::data(const QModelIndex &index, int role) const
@@ -84,8 +88,7 @@ WHERE ((person LIKE '%' || :q || '%')
        OR (card=:q)
        OR (purpose LIKE '%' || :q || '%')
 )
-                                              )"
-                                               ));
+                                              )"));
         query.bindValue(":q", q);
         query.exec();
         this->setQuery(query);
@@ -105,8 +108,9 @@ QString JumpsSqlModel::getLastDate()
     query.prepare("SELECT max(date) from jumps");
     query.exec();
     if (query.next()) {
-        return QDateTime::fromTime_t(
-                    query.value(0).toInt()).toString("yyyy-MM-dd");
+        auto val = query.value(0).toInt();
+        if (val)
+            return QDateTime::fromTime_t(val).toString("yyyy-MM-dd");
     }
     return "";
 }
