@@ -13,7 +13,8 @@ RESOURCES += qml.qrc
 QML_IMPORT_PATH =
 
 # Default rules for deployment.
-include(deployment.pri)
+#include(deployment.pri)
+#include(material/material.pri)
 
 HEADERS += \
     jumpssqlmodel.h
@@ -22,4 +23,7 @@ OTHER_FILES += \
     main.qml
 
 DISTFILES += \
-    modules/ManifestorLoader.qml
+    modules/ManifestorLoader.qml \
+    modules/JumpsListView.qml \
+    modules/AllJumpsTab.qml \
+    modules/ReportsTab.qml

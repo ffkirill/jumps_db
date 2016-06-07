@@ -3,8 +3,13 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QDateTime>
+#include <QDate>
 #include <QCoreApplication>
 #include <QDir>
+#include <QStandardPaths>
+#include <QStringList>
+#include <QMap>
+#include <QTimer>
 
 JumpsSqlModel::JumpsSqlModel(QObject *parent) :
     QSqlQueryModel(parent)
@@ -15,11 +20,10 @@ JumpsSqlModel::JumpsSqlModel(QObject *parent) :
         ++idx;
     }
     m_db = QSqlDatabase::addDatabase("QSQLITE");
-
-    m_db.setDatabaseName(QDir(QCoreApplication::applicationDirPath())
-                         .filePath("jumps.db"));
+    m_db.setDatabaseName(QDir(QStandardPaths::writableLocation(
+        QStandardPaths::DocumentsLocation)).filePath("jumps.db"));
     bool is_open = m_db.open();
-    if (is_open == true){
+    if (is_open == true) {
         qDebug() << "Connection to database established." << endl;
     } else {
         qDebug() << "Error for database " << m_db.databaseName()
@@ -27,7 +31,9 @@ JumpsSqlModel::JumpsSqlModel(QObject *parent) :
         return;
     }
     m_db.exec(SQL_INIT);
-    refresh();
+    refreshTriggered();
+    m_refreshTimer.setSingleShot(true);
+    connect(&m_refreshTimer, SIGNAL(timeout()), this, SLOT(refreshTriggered()));
 }
 
 QVariant JumpsSqlModel::data(const QModelIndex &index, int role) const
@@ -64,6 +70,7 @@ QHash<int, QByteArray> JumpsSqlModel::roleNames() const
     return m_roleNames;
 }
 
+//Filter property
 void JumpsSqlModel::setFilter(const QString &val)
 {
     if (val != m_filter) {
@@ -78,23 +85,85 @@ QString JumpsSqlModel::filter() const
     return m_filter;
 }
 
+//Start date property
+void JumpsSqlModel::setStartDate(const QDate &val)
+{
+    if (val != m_startDate) {
+        m_startDate = val;
+        refresh();
+        emit startDateChanged();
+    }
+}
+
+QDate JumpsSqlModel::startDate() const
+{
+    return m_startDate;
+}
+
+
+//End date property
+void JumpsSqlModel::setEndDate(const QDate &val)
+{
+    if (val != m_endDate) {
+        m_endDate = val;
+        refresh();
+        emit endDateChanged();
+    }
+}
+
+QDate JumpsSqlModel::endDate() const
+{
+    return m_endDate;
+}
+
+void JumpsSqlModel::refreshTriggered()
+{
+    this->runQuery();
+    qDebug() << "Timer triggered";
+}
+
+void JumpsSqlModel::runQuery()
+{
+    QSqlQuery query(m_db);
+    QStringList conditions;
+    QMap <QString, QString> params;
+
+    QString filter = m_filter.trimmed();
+    if (filter.length()) {
+        conditions.push_back("(person LIKE '%' || :q || '%') "
+            "OR (card=:q) "
+            "OR (purpose LIKE '%' || :q || '%')");
+        params[":q"] = filter;
+    }
+
+    if (m_startDate.isValid()) {
+        conditions.push_back("date >= strftime('%s', :startDate)");
+        params[":startDate"] = m_startDate.toString(Qt::ISODate);
+    }
+
+    if (m_endDate.isValid()) {
+        conditions.push_back("date <= strftime('%s', :endDate)");
+        params[":endDate"] = m_endDate.toString(Qt::ISODate);
+    }
+
+    QString queryText = conditions.empty() ?
+                QString(SQL_SELECT).arg("") :
+                QString(SQL_SELECT).arg("WHERE (" +
+                                        conditions.join(") and (") + ")");
+
+    query.prepare(queryText);
+    for (auto paramName: params.keys()) {
+        query.bindValue(paramName, params.value(paramName));
+    }
+    qDebug() << queryText;
+    qDebug() << query.boundValues();
+    query.exec();
+    this->setQuery(query);
+}
+
 void JumpsSqlModel::refresh()
 {
-    auto q = m_filter.trimmed();
-    if (q.length()) {
-        QSqlQuery query(m_db);
-        query.prepare(QString(SQL_SELECT).arg(R"(
-WHERE ((person LIKE '%' || :q || '%')
-       OR (card=:q)
-       OR (purpose LIKE '%' || :q || '%')
-)
-                                              )"));
-        query.bindValue(":q", q);
-        query.exec();
-        this->setQuery(query);
-    } else {
-        this->setQuery(QString(SQL_SELECT).arg(""), m_db);
-    }
+    m_refreshTimer.start(1000);
 }
 
 void JumpsSqlModel::raw(const QString &query)
@@ -169,3 +238,4 @@ CREATE TABLE IF NOT EXISTS jumps
       PRIMARY KEY (person, date, card, load_num) );
 )";
 
+//select count(1), person from jumps where  date = strftime('%s', "2016-06-05") and purpose like "TM инструктор%" group by person;

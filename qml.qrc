@@ -2,5 +2,8 @@
     <qresource prefix="/">
         <file>main.qml</file>
         <file>modules/ManifestorLoader.qml</file>
+        <file>modules/JumpsListView.qml</file>
+        <file>modules/AllJumpsTab.qml</file>
+        <file>modules/ReportsTab.qml</file>
     </qresource>
 </RCC>
