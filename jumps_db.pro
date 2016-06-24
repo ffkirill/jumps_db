@@ -5,7 +5,8 @@ TEMPLATE = app
 QT += qml quick sql
 
 SOURCES += main.cpp \
-    jumpssqlmodel.cpp
+    jumpssqlmodel.cpp \
+    arbitraryquerymodel.cpp
 
 RESOURCES += qml.qrc
 
@@ -14,10 +15,10 @@ QML_IMPORT_PATH =
 
 # Default rules for deployment.
 #include(deployment.pri)
-#include(material/material.pri)
 
 HEADERS += \
-    jumpssqlmodel.h
+    jumpssqlmodel.h \
+    arbitraryquerymodel.h
 
 OTHER_FILES += \
     main.qml
@@ -26,4 +27,5 @@ DISTFILES += \
     modules/ManifestorLoader.qml \
     modules/JumpsListView.qml \
     modules/AllJumpsTab.qml \
-    modules/ReportsTab.qml
+    modules/ReportsTab.qml \
+    modules/ReportsTableView.qml

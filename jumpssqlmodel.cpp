@@ -1,5 +1,4 @@
 #include "jumpssqlmodel.h"
-#include <QDebug>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QDateTime>
@@ -10,6 +9,7 @@
 #include <QStringList>
 #include <QMap>
 #include <QTimer>
+#include <QDebug>
 
 JumpsSqlModel::JumpsSqlModel(QObject *parent) :
     QSqlQueryModel(parent)
@@ -19,18 +19,10 @@ JumpsSqlModel::JumpsSqlModel(QObject *parent) :
         m_roleNames[Qt::UserRole + idx + 1] = COLUMN_NAMES[idx];
         ++idx;
     }
-    m_db = QSqlDatabase::addDatabase("QSQLITE");
-    m_db.setDatabaseName(QDir(QStandardPaths::writableLocation(
-        QStandardPaths::DocumentsLocation)).filePath("jumps.db"));
-    bool is_open = m_db.open();
-    if (is_open == true) {
-        qDebug() << "Connection to database established." << endl;
-    } else {
-        qDebug() << "Error for database " << m_db.databaseName()
-                 << " :" << (m_db.lastError().text()) << endl;
-        return;
+    m_db = QSqlDatabase::database();
+    for (QString queryText: QString(SQL_INIT).split(";")) {
+        m_db.exec(queryText);
     }
-    m_db.exec(SQL_INIT);
     refreshTriggered();
     m_refreshTimer.setSingleShot(true);
     connect(&m_refreshTimer, SIGNAL(timeout()), this, SLOT(refreshTriggered()));
@@ -119,7 +111,6 @@ QDate JumpsSqlModel::endDate() const
 void JumpsSqlModel::refreshTriggered()
 {
     this->runQuery();
-    qDebug() << "Timer triggered";
 }
 
 void JumpsSqlModel::runQuery()
@@ -155,8 +146,6 @@ void JumpsSqlModel::runQuery()
     for (auto paramName: params.keys()) {
         query.bindValue(paramName, params.value(paramName));
     }
-    qDebug() << queryText;
-    qDebug() << query.boundValues();
     query.exec();
     this->setQuery(query);
 }
@@ -177,7 +166,7 @@ QString JumpsSqlModel::getLastDate()
     query.prepare("SELECT max(date) from jumps");
     query.exec();
     if (query.next()) {
-        auto val = query.value(0).toInt();
+        auto val = query.value(0).toUInt();
         if (val)
             return QDateTime::fromTime_t(val).toString("yyyy-MM-dd");
     }
@@ -236,6 +225,10 @@ CREATE TABLE IF NOT EXISTS jumps
       purpose varchar(130),
       card integer,
       PRIMARY KEY (person, date, card, load_num) );
-)";
+);
+CREATE TABLE IF NOT EXISTS log
+    ( id INTEGER PRIMARY KEY ASC,
+      query TEXT ))";
 
 //select count(1), person from jumps where  date = strftime('%s', "2016-06-05") and purpose like "TM инструктор%" group by person;
+//select person, sum(1) from jumps where date=strftime('%s', "2016-06-23") and (purpose = "AFF REZ" or purpose like "Оператор%") group by person

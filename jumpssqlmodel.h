@@ -32,6 +32,8 @@ public:
     void setEndDate(const QDate &val);
     QDate endDate() const;
 
+    const static char* SQL_INIT;
+
 signals:
     void filterChanged();
     void startDateChanged();
@@ -44,7 +46,6 @@ private:
    const static char* COLUMN_NAMES[];
    const static char* SQL_SELECT;
    const static char* SQL_INSERT;
-   const static char* SQL_INIT;
    const static char* GROUPER_COLUMN;
    QHash<int, QByteArray> m_roleNames;
    QSqlDatabase m_db;

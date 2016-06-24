@@ -1,25 +1,43 @@
-import QtQuick 2.0
-import QtQuick.Layouts 1.1
-import Material 0.1
-import Material.ListItems 0.1 as ListItem
+import QtQuick 2.7
+import QtQuick.Controls 1.4
 import org.ffkirill.jumpsdb 1.0
 
-View {
-    property JumpsSqlModel model: null
+TableView {
     id: jumpsListView
-    ListView {
-        anchors.fill: parent
-        model: jumpsListView.model
-        delegate: ListItem.Subtitled {
-            id: item
-            text: (jumpsListView.model.indexInGroup(index) + 1) + ". " + person
-            subText: purpose
-            maximumLineCount: 2
-        }
-        section.property: "group_val"
-        section.criteria: ViewSection.FullString
-        section.delegate: ListItem.Subheader {
-            text: section
+    section.property: "group_val"
+    section.criteria: ViewSection.FullString
+    section.delegate: Text {
+        verticalAlignment: Text.AlignVCenter
+        height: 30
+        text: section
+    }
+
+    TableViewColumn {
+        role: "person"
+        title: "person"
+        width: 200
+        delegate: Text {
+            text: (jumpsListView.model.indexInGroup(styleData.row) + 1)
+                  + ". " + styleData.value
         }
     }
+
+    TableViewColumn {
+        role: "purpose"
+        title: "purpose"
+        width: 180
+    }
+
+    TableViewColumn {
+        role: "date"
+        title: "date"
+        width: 100
+    }
+
+    TableViewColumn {
+        role: "load_num"
+        title: "load_num"
+        width: 100
+    }
+
 }

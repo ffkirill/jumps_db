@@ -1,5 +1,4 @@
 import QtQuick 2.0
-import Material.Extras 0.1
 import org.ffkirill.jumpsdb 1.0
 
 QtObject {
@@ -19,9 +18,10 @@ QtObject {
     signal finished(var e)
 
     function getUrl(date, loadNum) {
-        return 'http://192.168.1.3/cgi-bin/ajax2.cgi?query=' +
-            'loadDetails&date=' +
-            formatJsonDate(date) + '&load=' + loadNum
+        return 'http://192.168.1.3/service/ajax2.php?query='+
+                'loadDetails&date='
+                + formatJsonDate(date)
+                + '&load=' + loadNum
     }
 
     function formatJsonDate(date) {

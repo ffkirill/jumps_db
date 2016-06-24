@@ -1,21 +1,21 @@
 import QtQuick 2.0
 import QtQuick.Layouts 1.1
 import QtQml 2.2
-import Material 0.1
+import QtQuick.Controls 1.4
 
 Tab {
     id: allJumpsTab
     title: "All Jumps"
     property var model: null
+    property var updateAction: null
     property string filter: ""
     property date startDate
     property date endDate
+
     ColumnLayout {
         anchors.fill: parent
         RowLayout {
-            Layout.topMargin: Units.dp(8)
-            Layout.leftMargin: Units.dp(8)
-            Layout.rightMargin: Units.dp(8)
+            Layout.margins: 8
             Layout.fillWidth: true
             TextField {
                 placeholderText: "Start date"
@@ -52,12 +52,13 @@ Tab {
                     allJumpsTab.filter = text
                 }
             }
+            Button {
+                action: updateAction
+            }
         }
         JumpsListView {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.margins: Units.dp(8)
-            elevation: 1
             model: allJumpsTab.model
         }
     }
